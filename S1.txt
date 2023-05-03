@@ -74,6 +74,7 @@ interface fa0/11
 # L3 switch 
 ip routing
 ipv6 unicast-routing
+no switchport + ip adresa - NA straně k routeru
 
 # EtherChannel
 # PAgP
