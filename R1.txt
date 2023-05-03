@@ -1,0 +1,79 @@
+hostname R1
+no ip domain lookup
+enable secret cisco
+line con 0
+ password cisco
+ login
+ logging synch
+line vty 0 4
+ password cisco
+ login
+banner motd $ Authorized Users Only! $
+
+interface g0/0/1
+ no shut
+interface g0/0/1.10
+ encap dot1q 10
+ ip add 192.168.10.1 255.255.255.0
+interface g0/0/1.20
+ encap dot1q 20
+ ip address 192.168.20.1 255.255.255.0
+interface g0/0/1.30
+ encap dot1q 30
+ ip address 192.168.30.1 255.255.255.0
+interface g0/0/1.1000
+ encap dot1q 1000 native
+end
+
+# IPv6 Routing
+ipv6 unicast-routing
+
+# DHCP server
+enable
+config t
+ip dhcp excluded-address 192.168.10.1 192.168.10.10
+ip dhcp excluded-address 192.168.30.1 192.168.30.10
+ip dhcp pool R1-LAN
+ network 192.168.10.0 255.255.255.0
+ domain-name ccna-lab.com
+ default-router 192.168.10.1
+ dns-server 192.168.20.254
+ip dhcp pool R3-LAN
+ network 192.168.30.0 255.255.255.0
+ default-router 192.168.30.1
+ dns-server 192.168.20.254
+ lease 2 12 30 - časovy udaj napr 2 dny 12 hodin a 30 minut
+interface g0/1
+ ip address dhcp
+ no shutdown
+
+# DHCP relay
+enable
+config t
+interface g0/0
+ ip helper-address 10.2.2.2
+
+
+# HSRP active
+enable
+config t
+interface g0/1
+ standby version 2
+ standby 1 ip 192.168.1.254
+ standby 1 priority 150
+ standby 1 preempt
+end
+
+# HSRP standby
+enable
+config t
+ interface g0/0
+ standby version 2
+ standby 1 ip 192.168.1.254
+end
+
+# HSRP config of the address
+enable
+config t
+ip default-gateway 192.168.1.254
+end

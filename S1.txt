@@ -1,0 +1,116 @@
+hostname S1
+no ip domain-lookup
+enable secret class
+line con 0
+ password cisco
+ login
+ logging synch
+line vty 0 15
+ password cisco
+ login
+banner motd $ Authorized Users Only! $
+
+vlan 10
+ name Management
+vlan 20
+ name Sales
+vlan 30
+ name Operations
+vlan 999
+ name Parking_Lot
+vlan 1000
+ name Native
+
+interface vlan 10
+ ip address 192.168.10.11 255.255.255.0
+ no shut
+exit
+
+ip default-gateway 192.168.10.1
+
+interface range f0/2-4, f0/7-24, G0/1-2
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+interface f0/1         
+ switchport trunk encaps dot1q
+ switchport nonegotiate
+ switchport mode trunk       
+ switchport trunk native vlan 1000
+ switchport trunk allowed vlan 10,30,1000         
+ no shutdown
+interface f0/6 
+ switchport mode access
+ switchport access vlan 20
+ no shutdown
+interface f0/5
+ switchport trunk encaps dot1q
+ switchport mode trunk
+ switchport nonegotiate
+ switchport trunk native vlan 1000  
+ switchport trunk allowed vlan 10,20,30,1000     
+ no shutdown
+end
+
+# SSH
+config terminal
+service password-encryption
+ip domain-name netacad.pka
+crypto key generate rsa
+  1024
+username administrator secret cisco
+line vty 0 15
+  login local
+  transport input ssh
+  no password cisco
+
+# VoIP
+interface fa0/11
+ switchport mode access
+ switchport access vlan 10
+ mls qos trust cos
+ switchport voice vlan 150
+
+# L3 switch 
+ip routing
+ipv6 unicast-routing
+
+# EtherChannel
+# PAgP
+channel-group 1 mode desirable
+# LACP
+channel-group 2 mode active
+
+# STP
+show spanning-tree vlan 1
+spanning-tree vlan 1 root primary
+
+# switchport port-security
+S1(config)# interface range f0/1 – 2
+S1(config-if-range)# switchport port-security
+S1(config-if-range)# switchport port-security maximum 1
+S1(config-if-range)# switchport port-security mac-address sticky
+S1(config-if-range)# switchport port-security violation restrict
+S1(config-if-range)# interface range f0/3-24 , g0/1-2
+S1(config-if-range)# shutdown
+
+
+# dhcp snooping 
+ip dhcp snooping limit rate 5
+ip dhcp snooping trust # on trunk?
+ip dhcp snooping # enable globally on all int
+ip dhcp snooping vlan 10,20,99
+
+# spanning-tree 
+spanning-tree portfast
+spanning-tree portfast default
+spanning-tree bpduguard enable
+https://itexamanswers.net/11-6-1-packet-tracer-switch-security-configuration-instructions-answer.html
+
+
+
+# Show  
+show spanning-tree active
+show etherchannel summary
+show port-security
+show run | begin interface
